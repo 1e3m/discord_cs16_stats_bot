@@ -1,0 +1,14 @@
+URL = 'https://uplay2.ru/csstats/ajax/load_stats.php'
+
+
+
+#CS_CHANNEL = 'cs-bot-stat'
+CS_CHANNEL = 'gachibot_music'
+
+MSG_HELP = '/top число - число должно быть больше 10, например /top19 - выводится список игроков с 9 по 19 позиции\n/player_cs (ник игрока) - поиск статистики игрока(допускаются ошибки в нике)\n/nick_cs (ваш ник) - указать боту свой ник в кс для команды /rank\n/rank - ваша статистика по указаному нику командой /nick_cs\n/status - информация о сервере\n/players_online - информация о сервере, список игроков онлайн\n'
+
+MSG_INFO = ''
+
+SERVER_STATUS_URL = 'https://img.myarena.ru/76182/560.png'
+
+MONITORING_SERVER_URL = 'https://www.myarena.ru/game-monitoring.html?game=76182'
