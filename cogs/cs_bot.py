@@ -7,6 +7,8 @@ import aiohttp
 import io
 import traceback
 
+import a2s2_server_info
+
 import asyncio
 import datetime
 import asyncpg
@@ -44,10 +46,10 @@ class Cs_Cog(commands.Cog):
 	    print('ready')
 	    channels = self.bot.get_all_channels();
 	    for ch in channels:
-	            if(ch.name == config.CS_CHANNEL):
-	                Cs_Cog.cs_channel = ch.id
-	                database.create_connection()
-	                break
+	        if(ch.name == config.CS_CHANNEL):
+	            Cs_Cog.cs_channel = ch.id
+	            database.create_connection()
+	            break
 	    self.status_timer.start()
 	    self.top_timer.start()
 	    return
@@ -141,6 +143,43 @@ class Cs_Cog(commands.Cog):
 	#	timer_top = threading.Timer(2100,self.top_timer_tick)
 	#	timer_status.start()
 	#	timer_top.start()
+
+	async def get_banner(self):
+		result = None
+		async with aiohttp.ClientSession() as session: # creates session
+			async with session.get(config.SERVER_STATUS_URL) as resp: # gets image from url
+				img = await resp.read() # reads image from response
+				#with io.BytesIO(img) as file: # converts to file-like object
+				result = io.BytesIO(img)
+		return result
+	
+	
+
+	@app_commands.command(name="status", description="Строка подключения к серверу, картинка со статусом сервера")
+	@app_commands.check(check_channel)
+	async def status(self, interaction: discord.Interaction):
+		startCmdTime = datetime.datetime.now()
+		await interaction.response.defer()
+		try:
+			info, players = await a2s2_server_info.get_server_info()
+			msg = ""
+			if(info is not None and players is not None):
+				msg += f'---\nСервер: ```{info.server_name}```\nТекущая карта:```{info.map_name}```\nИгроки на сервере: {len(players)}/32'
+				players_msg = ""
+				if(len(players) > 0):
+					tbl_players = await a2s2_server_info.get_players_table(players)
+			msg = f'{msg}``` {tbl_players}```'
+			file = await self.get_banner()
+			print('file')
+			print(file)
+			await interaction.followup.send(f'\n{msg}\n Подключиться: ```connect 46.174.52.22:27212```', file=discord.File(file, "server_status.png"))
+			
+		except Exception as e:
+			await interaction.followup.send(f'\n```Сервер недоступен```')
+			await self.lem_log_stack_trace(startCmdTime, interaction.user.name ,'/status', 0, interaction.guild.name, traceback.format_exc())
+
+		
+	
 
 	@app_commands.command(name="players_online", description="Текущая карта, список игроков онлайн")
 	@app_commands.check(check_channel)
@@ -259,25 +298,25 @@ class Cs_Cog(commands.Cog):
 			await self.lem_log_stack_trace(startCmdTime, interaction.user.name ,'/rank', 0, interaction.guild.name, traceback.format_exc())
 
 
-	@app_commands.command(name="status", description="Строка подключения к серверу, картинка со статусом сервера")
-	@app_commands.check(check_channel)
-	async def status(self, interaction: discord.Interaction):
-		await interaction.response.defer()
-		startCmdTime = datetime.datetime.now()
-		try:
-			#await asyncio.sleep(5)
-			url = "your image url" # must be an image
-			async with aiohttp.ClientSession() as session: # creates session
-				async with session.get(config.SERVER_STATUS_URL) as resp: # gets image from url
-					img = await resp.read() # reads image from response
-					with io.BytesIO(img) as file: # converts to file-like object
-						c_time = await self.command_time(startCmdTime);
-						await interaction.followup.send('Подключиться: ```connect 46.174.52.22:27212```',file=discord.File(file, "server_status.png"))
-						await self.lem_log(startCmdTime, interaction.user.name ,'/status', c_time, interaction.guild.name)
-		except Exception as e:
-			await self.lem_log_stack_trace(startCmdTime, interaction.user.name ,'/player_cs', 0, interaction.guild.name, traceback.format_exc())
-					#channel = self.bot.get_channel(Cs_Cog.cs_channel)
-					#await interaction.response.send_message(file=discord.File(file, "server_status.png"))
+	# @app_commands.command(name="status", description="Строка подключения к серверу, картинка со статусом сервера")
+	# @app_commands.check(check_channel)
+	# async def status(self, interaction: discord.Interaction):
+	# 	await interaction.response.defer()
+	# 	startCmdTime = datetime.datetime.now()
+	# 	try:
+	# 		#await asyncio.sleep(5)
+	# 		url = "your image url" # must be an image
+	# 		async with aiohttp.ClientSession() as session: # creates session
+	# 			async with session.get(config.SERVER_STATUS_URL) as resp: # gets image from url
+	# 				img = await resp.read() # reads image from response
+	# 				with io.BytesIO(img) as file: # converts to file-like object
+	# 					c_time = await self.command_time(startCmdTime);
+	# 					await interaction.followup.send('Подключиться: ```connect 46.174.52.22:27212```',file=discord.File(file, "server_status.png"))
+	# 					await self.lem_log(startCmdTime, interaction.user.name ,'/status', c_time, interaction.guild.name)
+	# 	except Exception as e:
+	# 		await self.lem_log_stack_trace(startCmdTime, interaction.user.name ,'/player_cs', 0, interaction.guild.name, traceback.format_exc())
+	# 				#channel = self.bot.get_channel(Cs_Cog.cs_channel)
+	# 				#await interaction.response.send_message(file=discord.File(file, "server_status.png"))
 
 
 	async def online_status(self):
