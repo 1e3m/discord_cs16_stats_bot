@@ -1,5 +1,4 @@
 *.pyc
 /token_cfg.py
-players_names.db
 
 hlstatsx/hlstatx_config.py
