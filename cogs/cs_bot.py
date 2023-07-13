@@ -1,7 +1,7 @@
 import discord
 import urllib, json
 import config
-import table_stat
+import csstats_mysql.table_stat as table_stat
 import database
 import aiohttp
 import io

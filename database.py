@@ -111,9 +111,12 @@ def setPlayer(player_name, nick):
     if (check_table(tPlayers) == False):
         res = executeNonQuery(f''' CREATE TABLE {tPlayers}(player text NOT NULL pRIMARY KEY, nick text NULL) ''', False)
 
+    if(get_nick(nick, player_name) is not None):
+        return "ОШИБКА! Введенный ник используется другим игроком!"
+
     if(getPlayer(player_name) is not None):
         if(executeNonQuery(f''' UPDATE '{tPlayers}' set nick = ? where player = ?  ''', True, nick, player_name) == True):
-            res = f'Ваш ник успешно обновлена на {nick}'       
+            res = f'Ваш ник успешно обновлен на {nick}'       
     else:
         if(executeNonQuery(f''' INSERT INTO {tPlayers}(player, nick) VALUES(?, ?) ''', True, player_name, nick) == True):
             res = f'Ваш ник успешно сохранен'
@@ -124,6 +127,16 @@ def getPlayer(player_name):
 
     if(check_table(tPlayers)):
         res = execute(f''' SELECT nick FROM 'players' WHERE player = '{player_name}' ''')
+        if res is None:
+            return res
+        return res[0]
+    else:
+        return None
+    
+def get_nick(nick, player_name):
+
+    if(check_table(tPlayers)):
+        res = execute(f''' SELECT player FROM 'players' WHERE nick = ? and player <> ? ''', True, nick, player_name)
         if res is None:
             return res
         return res[0]

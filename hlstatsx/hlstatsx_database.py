@@ -1,5 +1,4 @@
 import hlstatx_config 
-from getpass import getpass
 from mysql.connector import connect, Error
 from texttable import Texttable
 
@@ -32,8 +31,7 @@ def mySql_connect():
     except Error as e:
         print(e)
 
-def get_top_players(players_count: int):
-    start_number = players_count - 10;
+def get_top_players(start_number, end_number):
     select_top = f'''
         SELECT
 			playerId,
@@ -60,7 +58,7 @@ def get_top_players(players_count: int):
 			lastName ASC
 		LIMIT
 			{start_number},
-			{players_count}
+			{end_number}
     '''
 
     #conn= mariadb.connect(**conn_params)
@@ -69,9 +67,5 @@ def get_top_players(players_count: int):
     with conn.cursor() as cursor:
         cursor.execute(select_top)
         result = cursor.fetchall()
-        for row in result:
-            print(row)
+        return result
 
-
-
-get_top_players(10)
