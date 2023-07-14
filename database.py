@@ -68,14 +68,18 @@ def executeNonQuery(command, isPrint = True, *args):
             c.commit()
             c.close()
 
-def execute(command, isPrint=True):
+def execute(command, isPrint=True, *args):
     if isPrint:
-        print(f'execute: {command}')
+        print(f'execute: {command} {args}')
     c = None
     try:
         c = dbOpen();
         cur = c.cursor()
-        res = cur.execute(command)
+        res = None
+        if(args is not None):
+            res = cur.execute(command, (args))
+        else:
+            res = cur.execute(command)
         r = res.fetchone()
         print(f'result: {r}')
         return r

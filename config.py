@@ -1,6 +1,8 @@
 URL = 'https://uplay2.ru/csstats/ajax/load_stats.php'
+HLX_STATS_URL = "https://cs-pikabu.myarena.site/hlstats.php?mode=players&game=cstrike&sort=skill&sortorder=desc"
 
-
+CS_SERVER_IP = "37.230.137.48"
+CS_SERVER_PORT = 27015
 
 #CS_CHANNEL = 'cs-bot-stat'
 CS_CHANNEL = 'gachibot_music'

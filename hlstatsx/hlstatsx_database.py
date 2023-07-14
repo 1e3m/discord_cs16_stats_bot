@@ -1,4 +1,4 @@
-import hlstatx_config 
+from hlstatsx import hlstatx_config 
 from mysql.connector import connect, Error
 from texttable import Texttable
 
@@ -31,9 +31,10 @@ def mySql_connect():
     except Error as e:
         print(e)
 
-def get_top_players(start_number, end_number):
+async def get_top_players(start_number, end_number):
     select_top = f'''
         SELECT
+        	player_rank.player_rank,
 			playerId,
 			connection_time,
 			lastName,
@@ -50,6 +51,13 @@ def get_top_players(start_number, end_number):
 			last_skill_change
 		FROM
 			hlstats_Players
+		LEFT JOIN(
+			SELECT 
+				playerId rankPlayerId, 
+				row_number() over (order by skill desc) player_rank 
+			FROM u34670_hlstatsx.hlstats_players 
+			order by skill desc
+		) player_rank on hlstats_players.playerId = player_rank.rankPlayerId
 		WHERE
 			game='cstrike'
 			AND hideranking=0
@@ -59,13 +67,52 @@ def get_top_players(start_number, end_number):
 		LIMIT
 			{start_number},
 			{end_number}
-    '''
+	'''
 
-    #conn= mariadb.connect(**conn_params)
+	#conn= mariadb.connect(**conn_params)
     conn =  mySql_connect()
     conn.reconnect()
     with conn.cursor() as cursor:
         cursor.execute(select_top)
         result = cursor.fetchall()
         return result
+    
+async def get_player(nick):
+	querry = f'''
+	SELECT
+		player_rank.player_rank,
+		playerId,
+		connection_time,
+		lastName,
+		flag,
+		country,
+		skill,
+		kills,
+		deaths,
+		IFNULL(kills/deaths, '-') AS kpd,
+		headshots,
+		IFNULL(headshots/kills, '-') AS hpk,
+		IFNULL(ROUND((hits / shots * 100), 1), 0.0) AS acc,
+		activity,
+		last_skill_change
+	FROM
+		hlstats_Players
+    LEFT JOIN(
+		SELECT 
+			playerId rankPlayerId, 
+			row_number() over (order by skill desc) player_rank 
+		FROM u34670_hlstatsx.hlstats_players 
+		order by skill desc
+    ) player_rank on hlstats_players.playerId = player_rank.rankPlayerId
+	WHERE
+		game='cstrike'
+		AND hideranking=0
+		and lastName = '{nick}'
+'''
+	conn =  mySql_connect()
+	conn.reconnect()
+	with conn.cursor() as cursor:
+		cursor.execute(querry)
+		result = cursor.fetchall()
+		return result
 
