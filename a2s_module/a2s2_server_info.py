@@ -24,3 +24,8 @@ async def get_players_table(players):
         pp.append([player.name, player.score, player_time.strftime("%H:%M:%S")])
     table.add_rows(pp)        
     return table.draw()
+
+async def get_current_map():
+    adr = (config.CS_SERVER_IP,config.CS_SERVER_PORT)
+    info = a2s.info(adr)
+    return info.map_name

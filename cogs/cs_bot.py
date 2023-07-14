@@ -7,7 +7,7 @@ import aiohttp
 import io
 import traceback
 
-import a2s2_server_info
+from a2s_module import a2s2_server_info
 
 import asyncio
 import datetime
@@ -43,16 +43,16 @@ class Cs_Cog(commands.Cog):
 
 	@commands.Cog.listener()
 	async def on_ready(self):
-	    print('ready')
-	    channels = self.bot.get_all_channels();
-	    for ch in channels:
-	        if(ch.name == config.CS_CHANNEL):
-	            Cs_Cog.cs_channel = ch.id
-	            database.create_connection()
-	            break
-	    self.status_timer.start()
-	    self.top_timer.start()
-	    return
+		print('ready')
+		channels = self.bot.get_all_channels();
+		for ch in channels:
+			if(ch.name == config.CS_CHANNEL):
+				Cs_Cog.cs_channel = ch.id
+				database.create_connection()
+				break
+		self.status_timer.start()
+		self.top_timer.start()
+		return
 
 	@commands.command()
 	async def sync(self, ctx) -> None:
