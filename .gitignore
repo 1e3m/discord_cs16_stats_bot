@@ -1,4 +1,3 @@
 *.pyc
 /token_cfg.py
-
 hlstatsx/hlstatx_config.py
