@@ -21,6 +21,9 @@ async def get_text_table_from_list(players: ListHlxPLayers):
     return table.draw()
 
 async def get_text_table(player: HlxPlayer):
+    if(player is None):
+        return None
+    
     table, rows = await __get_table()        
     rows.append([player.player_rank, player.name, player.kills, player.deaths, player.headshots, player.kill_deaths, player.acuracy, player.skill ])
     table.add_rows(rows)        

@@ -16,5 +16,9 @@ class HlxPlayer():
         self.activity = activity
         self.last_skill_change= last_skill_change
 
+    @classmethod
+    def shortPlayer(cls, nick):
+        return cls(None,None,None,nick,None,None,None,None,None,None,None,None,None,None,None)
+
     def toString(self):
          return f'rank: {self.player_rank}, skill: {self.skill}, name: {self.name}, k/d: {self.kill_deaths}'

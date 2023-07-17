@@ -21,5 +21,14 @@ async def get_player(nick):
     if(res is not None):
         for p in res:
             return HlxPlayer(p[0],p[1],p[2],p[3],p[4],p[5],p[6],p[7],p[8],p[9],p[10],p[11],p[12],p[13],p[14])
+    return None
+
+async def get_all_players_nicks():
+    players = []
+    res = await hlstatsx_database.get_all_players_nicks()
+    if(res is not None):
+        for p in res:
+            players.append(HlxPlayer.shortPlayer(p[0]))
+    return players
 
 #get_top_players(10)

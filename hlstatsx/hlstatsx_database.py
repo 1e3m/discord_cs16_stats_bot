@@ -108,11 +108,27 @@ async def get_player(nick):
 		game='cstrike'
 		AND hideranking=0
 		and lastName = '{nick}'
-'''
+	'''
 	conn =  mySql_connect()
 	conn.reconnect()
 	with conn.cursor() as cursor:
 		cursor.execute(querry)
 		result = cursor.fetchall()
 		return result
-
+        
+async def get_all_players_nicks():
+	querry = f'''
+	SELECT
+		lastName		
+	FROM
+		hlstats_Players
+   	WHERE
+		game='cstrike'
+		AND hideranking=0
+	'''
+	conn =  mySql_connect()
+	conn.reconnect()
+	with conn.cursor() as cursor:
+		cursor.execute(querry)
+		result = cursor.fetchall()
+		return result
