@@ -223,7 +223,8 @@ class Cs_Cog(commands.Cog):
 		if(search is None):
 			await interaction.followup.send(f'```Ошибка! Введен некорректный STEAM_ID. Необходимо ввести STEAM_ID в формате STEAM_X:X:X...X```')
 
-		await interaction.followup.send(f'```STEAM_ID: {steam_id}\nкоманда работает в тестовом режиме, и ничего не делает```')		
+		if(steam_id_finder.chek_steam_id(steam_id)):
+			await interaction.followup.send(f'```STEAM_ID: {steam_id}\nкоманда работает в тестовом режиме, и ничего не делает```')		
 		#res = database.set_steam_id(interaction.user.id,steam_id)
 		#await interaction.followup.send(f'```{res}```')
 
