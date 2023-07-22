@@ -4,7 +4,8 @@ from texttable import Texttable
 
 ListHlxPLayers = List[HlxPlayer]
 
-async def __get_table():
+async def __get_table() -> tuple:
+    """return table columns annotation, and header row"""
     table = Texttable()
     table.set_cols_align(["l", "c", "r", "r", "r", "r", "r", "r"])
     table.set_cols_valign(["i", "t", "i", "i", "i", "i", "t", "t"])
@@ -13,14 +14,16 @@ async def __get_table():
     return table , pp
 
 
-async def get_text_table_from_list(players: ListHlxPLayers):
+async def get_text_table_from_list(players: ListHlxPLayers) -> str:
+    """draw text tavle from list HlxPlayers"""
     table, rows = await __get_table()
     for p in players:        
         rows.append([p.player_rank, p.name, p.kills, p.deaths, p.headshots, p.kill_deaths, p.acuracy, p.skill ])
     table.add_rows(rows)        
     return table.draw()
 
-async def get_text_table(player: HlxPlayer):
+async def get_text_table(player: HlxPlayer) -> str:
+    """draw one row text table from HlxPLayer"""
     if(player is None):
         return None
     

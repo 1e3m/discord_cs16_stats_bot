@@ -2,3 +2,5 @@
 /token_cfg.py
 hlstatsx/hlstatx_config.py
 players_names.db_backup
+hlstatsx/hlstatsx_database.py
+players_names.db_backup2

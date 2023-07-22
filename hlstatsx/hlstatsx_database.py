@@ -1,38 +1,23 @@
 from hlstatsx import hlstatx_config 
 from mysql.connector import connect, Error
 from texttable import Texttable
+        
+async def _execute(sql_query):
+	try:
+		with connect(host=hlstatx_config.HOST, user=hlstatx_config.LOGIN, password=hlstatx_config.PASS, port=hlstatx_config.PORT, database=hlstatx_config.DATABASE) as connection:
+			with connection.cursor() as cursor:
+				cursor.execute(sql_query)
+				result = cursor.fetchall()
+				return result	
+	except Error as e:
+		print(e)
+	finally:
+		connection.close()
 
-
-#import mariadb
-
-# connection parameters
-# conn_params= {
-#     "user" : hlstatx_config.LOGIN,
-#     "password" : hlstatx_config.PASS,
-#     "host" : hlstatx_config.HOST,
-#     "database" : hlstatx_config.DATABASE
-# }
-
-
-
-
-def _mySql_connect():
-    print("connecting to MySQL")
-    try:
-        with connect(
-            host=hlstatx_config.HOST,
-            user=hlstatx_config.LOGIN,
-            password=hlstatx_config.PASS,
-            port=3306,
-            database=hlstatx_config.DATABASE
-        ) as connection:
-            print(connection)
-            return connection
-    except Error as e:
-        print(e)
 
 async def get_top_players(start_number, end_number):
-    select_top = f'''
+	"""get range 10 players"""
+	query = f'''
         SELECT
         	player_rank.player_rank,
 			playerId,
@@ -68,17 +53,14 @@ async def get_top_players(start_number, end_number):
 			{start_number},
 			{end_number}
 	'''
+	
+	result = await _execute(query)
+	return result
 
-	#conn= mariadb.connect(**conn_params)
-    conn =  _mySql_connect()
-    conn.reconnect()
-    with conn.cursor() as cursor:
-        cursor.execute(select_top)
-        result = cursor.fetchall()
-        return result
-    
+  
 async def get_player(nick):
-	querry = f'''
+	"""get statistic player from nick """
+	query = f'''
 	SELECT
 		player_rank.player_rank,
 		playerId,
@@ -109,16 +91,14 @@ async def get_player(nick):
 		AND hideranking=0
 		and lastName = '{nick}'
 	'''
-	conn =  _mySql_connect()
-	conn.reconnect()
-	with conn.cursor() as cursor:
-		cursor.execute(querry)
-		result = cursor.fetchall()
-		return result
-        
+	result = await _execute(query)
+	return result
+
+       
 async def get_all_players_nicks():
-	querry = f'''
-	SELECT
+	"""get list all players nicks""" 
+	query = f'''
+	SELECT DISTINCT
 		lastName		
 	FROM
 		hlstats_Players
@@ -126,9 +106,5 @@ async def get_all_players_nicks():
 		game='cstrike'
 		AND hideranking=0
 	'''
-	conn =  _mySql_connect()
-	conn.reconnect()
-	with conn.cursor() as cursor:
-		cursor.execute(querry)
-		result = cursor.fetchall()
-		return result
+	result = await _execute(query)
+	return result

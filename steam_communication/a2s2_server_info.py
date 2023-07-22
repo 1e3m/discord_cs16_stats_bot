@@ -4,12 +4,14 @@ from texttable import Texttable
 from datetime import datetime, time, timedelta
 
 async def get_server_info():
+    """get server info and players"""
     adr = (config.CS_SERVER_IP,config.CS_SERVER_PORT)
     info = a2s.info(adr)
     players = a2s.players(adr)
     return info, players
 
-async def get_players_table(players):
+async def get_players_table(players) -> str:
+    """get table players online on server"""
     table = Texttable()
     table.set_cols_align(["l", "c", "r"])
     table.set_cols_valign(["t", "i", "a"])
@@ -25,7 +27,8 @@ async def get_players_table(players):
     table.add_rows(pp)        
     return table.draw()
 
-async def get_current_map():
+async def get_current_map() -> str:
+    """get current map on server"""
     adr = (config.CS_SERVER_IP,config.CS_SERVER_PORT)
     info = a2s.info(adr)
     return info.map_name
