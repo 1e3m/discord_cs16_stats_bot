@@ -10,7 +10,7 @@ import re
 
 from cogs import server_commands
 from utils import fuzzywuzzy_finder, hlxPlayer_to_TextTable
-from a2s_module import a2s2_server_info
+from steam_communication import a2s2_server_info, steam_id_finder
 from hlstatsx import hlstatx
 
 import asyncio
@@ -217,14 +217,24 @@ class Cs_Cog(commands.Cog):
 	@app_commands.check(check_channel)
 	async def steam_id(self, interaction: discord.Interaction, steam_id: str): 
 		await interaction.response.defer()
-		steam_id_expression = "/(?<CUSTOMPROFILE>https?\:\/\/steamcommunity.com\/id\/[A-Za-z_0-9]+)|(?<CUSTOMURL>\/id\/[A-Za-z_0-9]+)|(?<PROFILE>https?\:\/\/steamcommunity.com\/profiles\/[0-9]+)|(?<STEAMID2>STEAM_[10]:[10]:[0-9]+)|(?<STEAMID3>\[U:[10]:[0-9]+\])|(?<STEAMID64>[^\/][0-9]{8,})/g"
-		search = re.search(steam_id_expression, steam_id)
+		expression = r"/(?P<CUSTOMPROFILE>https?\:\/\/steamcommunity.com\/id\/[A-Za-z_0-9]+)|(?P<CUSTOMURL>\/id\/[A-Za-z_0-9]+)|(?P<PROFILE>https?\:\/\/steamcommunity.com\/profiles\/[0-9]+)|(?P<STEAMID2>STEAM_[10]:[10]:[0-9]+)|(?P<STEAMID3>\[U:[10]:[0-9]+\])|(?P<STEAMID64>[^\/][0-9]{8,})/g"
+		search = re.search(expression,steam_id.strip())
 
-		if(len(search) == 0):
+		if(search is None):
 			await interaction.followup.send(f'```Ошибка! Введен некорректный STEAM_ID. Необходимо ввести STEAM_ID в формате STEAM_X:X:X...X```')
 
-		res = database.set_steam_id(interaction.user.id,steam_id)
-		await interaction.followup.send(f'```{res}```')
+		await interaction.followup.send(f'```STEAM_ID: {steam_id}\nкоманда работает в тестовом режиме, и ничего не делает```')		
+		#res = database.set_steam_id(interaction.user.id,steam_id)
+		#await interaction.followup.send(f'```{res}```')
+
+	@app_commands.command(name="steam_id_from_comunity_url", description="Сохранить STEAM_ID в базу для mix сервера по ссылку на профиль STEAM")
+	@app_commands.check(check_channel)
+	async def steam_id_from_comunity_url(self, interaction: discord.Interaction, url: str): 
+		await interaction.response.defer()
+		steam_id = await steam_id_finder.get_steam_id_from_url(url)
+		await interaction.followup.send(f'```STEAM_ID: {steam_id}\nкоманда работает в тестовом режиме, и ничего не делает```')
+		# res = database.set_steam_id(interaction.user.id,steam_id)
+		# await interaction.followup.send(f'```{res}```')
 
 	@app_commands.command(name="rank", description="Ваша статистика по сохраненному нику командой /nick_cs")
 	@app_commands.check(check_channel)
