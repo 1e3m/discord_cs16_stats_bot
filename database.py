@@ -9,7 +9,7 @@ db_name = 'players_names.db'
 tPlayers = 'players'
 
 # determine if application is a script file or frozen exe
-def app_path():
+def _app_path():
     application_path = ""
     if getattr(sys, 'frozen', False):
         application_path = os.path.dirname(sys.executable)
@@ -19,13 +19,13 @@ def app_path():
 
 
 
-def create_connection():
+def _create_connection():
     """ create a database connection to a SQLite database """
     conn = None
     try:
         #print("db_path:")
         #print(f"{app_path()}\\{db_name}")
-        conn = sqlite3.connect(f"{app_path()}\\{db_name}")
+        conn = sqlite3.connect(f"{_app_path()}\\{db_name}")
         return conn
         #print(sqlite3.version)
     except Error as e:
@@ -36,25 +36,25 @@ def create_connection():
 
 
 if __name__ == '__main__':
-    create_connection(f"{app_path()}\\{db_name}")
+    _create_connection(f"{_app_path()}\\{db_name}")
 
-def dbOpen():
+def _dbOpen():
     conn = None
     try:
         #print("db_path:")
         #print(f"{app_path()}\\{db_name}")
-        conn = sqlite3.connect(f"{app_path()}\\{db_name}")
+        conn = sqlite3.connect(f"{_app_path()}\\{db_name}")
         return conn
         #print(sqlite3.version)
     except Error as e:
         print(e)
 
-def executeNonQuery(command, isPrint = True, *args):
+def _executeNonQuery(command, isPrint = True, *args):
     if isPrint:
         print(f'executeNonQuery: {command} {args}')
     c = None
     try:
-        c = dbOpen();
+        c = _dbOpen();
         cur = c.cursor()
         if(args is not None):
             cur.execute(command, (args))
@@ -68,12 +68,12 @@ def executeNonQuery(command, isPrint = True, *args):
             c.commit()
             c.close()
 
-def execute(command, isPrint=True, *args):
+def _execute(command, isPrint=True, *args):
     if isPrint:
         print(f'execute: {command} {args}')
     c = None
     try:
-        c = dbOpen();
+        c = _dbOpen();
         cur = c.cursor()
         res = None
         if(args is not None):
@@ -90,8 +90,8 @@ def execute(command, isPrint=True, *args):
             c.commit()
             c.close()
 
-def check_table(tableName):
-    c = dbOpen();
+def _check_table(tableName):
+    c = _dbOpen();
     cur = c.cursor()
     #print(f'check_table: SELECT count(name) FROM sqlite_master WHERE type="table" AND name="{tableName}"')
     dbRes = cur.execute(f''' SELECT count(name) FROM sqlite_master WHERE type='table' AND name='{tableName}' ''')
@@ -109,46 +109,69 @@ def check_table(tableName):
     c.close()
     return result 
 
-def setPlayer(player_name, nick):
+def _check_and_create_table(table):
     res = ''
-    print(f'CHECK_TABLE {check_table(tPlayers)}')
-    if (check_table(tPlayers) == False):
-        res = executeNonQuery(f''' CREATE TABLE {tPlayers}(player text NOT NULL pRIMARY KEY, nick text NULL) ''', False)
+    print(f'CHECK_TABLE {_check_table(table)}')
+    if (_check_table(table) == False):
+        res = _executeNonQuery(f''' CREATE TABLE {table}(player text NOT NULL pRIMARY KEY, nick text NULL, steam_id text NULL) ''', False)
+    return res
 
-    if(get_nick(nick, player_name) is not None):
+def set_player(player_name, nick):
+    res = _check_and_create_table(tPlayers)
+
+    if(_get_nick(nick, player_name) is not None):
         return "ОШИБКА! Введенный ник используется другим игроком!"
 
-    if(getPlayer(player_name) is not None):
-        if(executeNonQuery(f''' UPDATE '{tPlayers}' set nick = ? where player = ?  ''', True, nick, player_name) == True):
+    if(_get_player(player_name) is not None):
+        if(_executeNonQuery(f''' UPDATE '{tPlayers}' set nick = ? where player = ?  ''', True, nick, player_name) == True):
             res = f'Ваш ник успешно обновлен на {nick}'       
     else:
-        if(executeNonQuery(f''' INSERT INTO {tPlayers}(player, nick) VALUES(?, ?) ''', True, player_name, nick) == True):
+        if(_executeNonQuery(f''' INSERT INTO {tPlayers}(player, nick) VALUES(?, ?) ''', True, player_name, nick) == True):
             res = f'Ваш ник успешно сохранен'
     return res
 
+def set_steam_id(player_name, steam_id):
+    res = _check_and_create_table(tPlayers)
+    if(_get_steam_id(steam_id, player_name) is not None):
+        return "ОШИБКА! Введенный STEAM_ID используется другим игроком!"
 
-def getPlayer(player_name):
+    if(_get_player(player_name) == True):
+        if(_executeNonQuery(f''' UPDATE '{tPlayers}' set steam_id = ? where player = ?  ''', True, steam_id, player_name) == True):
+           res = f'Ваш STEAM_ID успешно обновлен.'
+    else:
+        if(_executeNonQuery(f''' INSERT INTO {tPlayers}(player, steam_id) VALUES(?, ?) ''', True, player_name, steam_id) == True):
+            res = f'Ваш STEAM_ID успешно сохранен'
 
-    if(check_table(tPlayers)):
-        res = execute(f''' SELECT nick FROM 'players' WHERE player = '{player_name}' ''')
+def _get_player(player_name):
+    if(_check_table(tPlayers)):
+        res = _execute(f''' SELECT nick FROM 'players' WHERE player = '{player_name}' ''')
         if res is None:
             return res
         return res[0]
     else:
         return None
     
-def get_nick(nick, player_name):
+def _get_nick(nick, player_name):
 
-    if(check_table(tPlayers)):
-        res = execute(f''' SELECT player FROM 'players' WHERE nick = ? and player <> ? ''', True, nick, player_name)
+    if(_check_table(tPlayers)):
+        res = _execute(f''' SELECT player FROM 'players' WHERE nick = ? and player <> ? ''', True, nick, player_name)
         if res is None:
             return res
         return res[0]
     else:
         return None
-
+    
+def _get_steam_id(steam_id, player_name):
+    if(_check_table(tPlayers)):
+        res = _execute(f''' SELECT player FROM 'players' WHERE steam_id = ? and player <> ? ''', True, steam_id, player_name)
+        if res is None:
+            return res
+        return res[0]
+    else:
+        return None
+    
 def all_player():
-    if(check_table(tPlayers)):
-        res = execute(f''' SELECT * FROM 'players' ''')
+    if(_check_table(tPlayers)):
+        res = _execute(f''' SELECT * FROM 'players' ''')
         print('ALL PLAYERS')
         print(res)

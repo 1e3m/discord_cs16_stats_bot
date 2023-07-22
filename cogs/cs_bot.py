@@ -6,10 +6,10 @@ import database
 import aiohttp
 import io
 import traceback
+import re
 
 from cogs import server_commands
-from utils import fuzzywuzzy_finder
-from utils import hlxPlayer_to_TextTable
+from utils import fuzzywuzzy_finder, hlxPlayer_to_TextTable
 from a2s_module import a2s2_server_info
 from hlstatsx import hlstatx
 
@@ -51,7 +51,7 @@ class Cs_Cog(commands.Cog):
 		for ch in channels:
 			if(ch.name == config.CS_CHANNEL):
 				Cs_Cog.cs_channel = ch.id
-				database.create_connection()
+				database._create_connection()
 				break
 		self.status_timer.start()
 		self.top_timer.start()
@@ -211,7 +211,20 @@ class Cs_Cog(commands.Cog):
 	@app_commands.check(check_channel)
 	async def nick_cs(self, interaction: discord.Interaction, nick: str):
 		id = interaction.user.id
-		await interaction.response.send_message(f'``` '+ database.setPlayer(id ,nick) + '```')
+		await interaction.response.send_message(f'``` '+ database.set_player(id ,nick) + '```')
+
+	@app_commands.command(name="steam_id", description="Сохранить STEAM_ID в базу для mix сервера")
+	@app_commands.check(check_channel)
+	async def steam_id(self, interaction: discord.Interaction, steam_id: str): 
+		await interaction.response.defer()
+		steam_id_expression = "/(?<CUSTOMPROFILE>https?\:\/\/steamcommunity.com\/id\/[A-Za-z_0-9]+)|(?<CUSTOMURL>\/id\/[A-Za-z_0-9]+)|(?<PROFILE>https?\:\/\/steamcommunity.com\/profiles\/[0-9]+)|(?<STEAMID2>STEAM_[10]:[10]:[0-9]+)|(?<STEAMID3>\[U:[10]:[0-9]+\])|(?<STEAMID64>[^\/][0-9]{8,})/g"
+		search = re.search(steam_id_expression, steam_id)
+
+		if(len(search) == 0):
+			await interaction.followup.send(f'```Ошибка! Введен некорректный STEAM_ID. Необходимо ввести STEAM_ID в формате STEAM_X:X:X...X```')
+
+		res = database.set_steam_id(interaction.user.id,steam_id)
+		await interaction.followup.send(f'```{res}```')
 
 	@app_commands.command(name="rank", description="Ваша статистика по сохраненному нику командой /nick_cs")
 	@app_commands.check(check_channel)
@@ -220,7 +233,7 @@ class Cs_Cog(commands.Cog):
 		startCmdTime = datetime.datetime.now()
 		try:
 			id = interaction.user.id
-			cs_nick = database.getPlayer(id)
+			cs_nick = database._get_player(id)
 			player = await hlstatx.get_player(cs_nick)
 			c_time = await self.command_time(startCmdTime)
 			if(player is None):

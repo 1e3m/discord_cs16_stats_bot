@@ -16,7 +16,7 @@ from texttable import Texttable
 
 
 
-def mySql_connect():
+def _mySql_connect():
     print("connecting to MySQL")
     try:
         with connect(
@@ -70,7 +70,7 @@ async def get_top_players(start_number, end_number):
 	'''
 
 	#conn= mariadb.connect(**conn_params)
-    conn =  mySql_connect()
+    conn =  _mySql_connect()
     conn.reconnect()
     with conn.cursor() as cursor:
         cursor.execute(select_top)
@@ -109,7 +109,7 @@ async def get_player(nick):
 		AND hideranking=0
 		and lastName = '{nick}'
 	'''
-	conn =  mySql_connect()
+	conn =  _mySql_connect()
 	conn.reconnect()
 	with conn.cursor() as cursor:
 		cursor.execute(querry)
@@ -126,7 +126,7 @@ async def get_all_players_nicks():
 		game='cstrike'
 		AND hideranking=0
 	'''
-	conn =  mySql_connect()
+	conn =  _mySql_connect()
 	conn.reconnect()
 	with conn.cursor() as cursor:
 		cursor.execute(querry)
