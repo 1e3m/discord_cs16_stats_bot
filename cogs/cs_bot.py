@@ -10,6 +10,8 @@ import re
 
 from cogs import server_commands
 from utils import fuzzywuzzy_finder, hlxPlayer_to_TextTable
+from utils import discord_color_textblock as textblock
+from utils import discord_text_colors as textcolor
 from steam_communication import a2s2_server_info, steam_id_finder
 from hlstatsx import hlstatx
 
@@ -119,7 +121,7 @@ class Cs_Cog(commands.Cog):
 			c_time = await self.command_time(startCmdTime)
 			await self.lem_log(startCmdTime, self.bot.user ,'/server status cycle', c_time, ch.guild.name)			
 		except Exception as e:
-			await ch.send(f'\n```Сервер недоступен```')
+			await ch.send(f'\n{await self.get_server_timeout_message()}')
 			await self.lem_log_stack_trace(startCmdTime, self.bot.user ,'status cycle', 0, ch.guild.name, traceback.format_exc())
 	
 	async def command_time(self, date):
@@ -142,16 +144,27 @@ class Cs_Cog(commands.Cog):
 				result = io.BytesIO(img)
 		return result	
 
+	async def get_server_timeout_message(self) -> str:
+		return await textblock.get_ansi_block(await textblock.colorize(textcolor.Red,"Сервер недоступен"))
+
 	async def get_server_status(self):
 		info, players = await a2s2_server_info.get_server_info()
 		msg = ""
 		if(info is not None and players is not None):
-			msg += f'---\nСервер: ```{info.server_name}```\nТекущая карта:```{info.map_name}```\nИгроки на сервере: {len(players)}/32'
+			server_name = await textblock.get_ansi_block(await textblock.colorize(textcolor.Red,f'{info.server_name}'))
+			map_name = await textblock.get_ansi_block(await textblock.colorize(textcolor.Cyan,info.map_name))
+			msg += f'---\nСервер: {server_name}\nТекущая карта:{map_name}'
 			players_msg = ""
+		players_count = 0
+		player_table = ""
+		if(players is not None):
 			if(len(players) > 0):
-				tbl_players = await a2s2_server_info.get_players_table(players)
-		msg = f'{msg}``` {tbl_players}```'		
-		return f'\n{msg}\n Подключиться: ```connect {config.CS_SERVER_IP}:{config.CS_SERVER_PORT}```'		
+				players_count = len(players)
+				player_table = await a2s2_server_info.get_players_table(players)
+		player_table = await textblock.get_ansi_block(await textblock.colorize(textcolor.Blue,player_table))
+		msg = f'{msg}\nИгроки на сервере: {players_count}/32  {player_table}'	
+		connect_ip = await textblock.get_ansi_block(await textblock.colorize(textcolor.Orange_background,f'connect {config.CS_SERVER_IP}:{config.CS_SERVER_PORT}'))
+		return f'\n{msg}\n Подключиться: {connect_ip}'		
 
 	@app_commands.command(name="status", description="Строка подключения к серверу, картинка со статусом сервера")
 	@app_commands.check(check_channel)
@@ -163,7 +176,7 @@ class Cs_Cog(commands.Cog):
 			file = await self.get_banner()
 			await interaction.followup.send(msg, file=discord.File(file, "server_status.png"))			
 		except Exception as e:
-			await interaction.followup.send(f'\n```Сервер недоступен```')
+			await interaction.followup.send(f'\n{await self.get_server_timeout_message()}')
 			await self.lem_log_stack_trace(startCmdTime, interaction.user.name ,'/status', 0, interaction.guild.name, traceback.format_exc())
 	
 	@app_commands.command(name="top", description="Список игроков, от текущего значения 10 игроков вверх")
@@ -172,8 +185,9 @@ class Cs_Cog(commands.Cog):
 		if players_count < 10:
 			players_count = 10
 		players = await hlstatx.get_top_players(players_count)
-		msg = await hlxPlayer_to_TextTable.get_text_table_from_list(players)
-		await interaction.response.send_message('```' + msg + f'```\n from:  {config.HLX_STATS_URL}' )
+		msg = await hlxPlayer_to_TextTable.get_text_players_from_list(players)
+		msg = await textblock.get_ansi_block(await textblock.colorize(textcolor.Cyan,msg))
+		await interaction.response.send_message(f'{msg}\n from:  {config.HLX_STATS_URL}' )
 
 	@app_commands.command(name="player_cs", description="Статистика игрока")
 	@app_commands.check(check_channel)
@@ -184,12 +198,14 @@ class Cs_Cog(commands.Cog):
 			nick = nick.strip()
 			all_players = await hlstatx.get_all_players_nicks()
 			search_nick = await fuzzywuzzy_finder.find_player(nick, all_players)
-			player = await hlstatx.get_player(search_nick)
-			tbl_player = await hlxPlayer_to_TextTable.get_text_table(player)
+			player = await hlstatx.get_player_by_nick(search_nick)
+			tbl_player = await hlxPlayer_to_TextTable.get_text_player_table(player)
 			c_time = await self.command_time(startCmdTime)
 			if(player is None):
 				alternative_players = await fuzzywuzzy_finder.find_five_alternative_players(nick,all_players)
-				await interaction.followup.send(f'```Игрок с ником {nick} не найден, проверьте правильность написания ника.```\n```Возможно вы искали одного из этих игроков: {alternative_players}```' )
+				msg = await textblock.get_ansi_block(await textblock.colorize(textcolor.Red,f"Игрок с ником {nick} не найден, проверьте правильность написания ника."))
+				msg_alternative_players = await textblock.get_ansi_block("Возможно вы искали одного из этих игроков: " + await textblock.colorize(textcolor.Cyan,alternative_players))
+				await interaction.followup.send(f'{msg}\n{msg_alternative_players}' )
 				await self.lem_log(startCmdTime, interaction.user.name ,'/player_cs', c_time, interaction.guild.name)
 			else:
 				await interaction.followup.send(f'```{tbl_player}```\n from:  {config.HLX_STATS_URL}' )
@@ -211,7 +227,10 @@ class Cs_Cog(commands.Cog):
 	@app_commands.check(check_channel)
 	async def nick_cs(self, interaction: discord.Interaction, nick: str):
 		id = interaction.user.id
-		await interaction.response.send_message(f'``` '+ database.set_player(id ,nick) + '```')
+		error, res = database.set_player(id ,nick)
+		color = textcolor.Red if error else textcolor.Cyan
+		msg = await textblock.get_ansi_block(await textblock.colorize(color,res))
+		await interaction.followup.send(f'{res}')
 
 	@app_commands.command(name="steam_id", description="Сохранить STEAM_ID в базу для mix сервера")
 	@app_commands.check(check_channel)
@@ -221,21 +240,26 @@ class Cs_Cog(commands.Cog):
 		search = re.search(expression,steam_id.strip())
 
 		if(search is None):
-			await interaction.followup.send(f'```Ошибка! Введен некорректный STEAM_ID. Необходимо ввести STEAM_ID в формате STEAM_X:X:X...X```')
+			err_msg = await textblock.get_ansi_block(await textblock.colorize(textcolor.Red,"Ошибка! Введен некорректный STEAM_ID. Необходимо ввести STEAM_ID в формате STEAM_X:X:X...X"))
+			await interaction.followup.send(err_msg)
 
 		if(steam_id_finder.chek_steam_id(steam_id)):
-			await interaction.followup.send(f'```STEAM_ID: {steam_id}\nкоманда работает в тестовом режиме, и ничего не делает```')		
-		#res = database.set_steam_id(interaction.user.id,steam_id)
-		#await interaction.followup.send(f'```{res}```')
+			msg = await textblock.get_ansi_block(await textblock.colorize(textcolor.Cyan,f"STEAM_ID: {steam_id}\nкоманда работает в тестовом режиме, и ничего не делает"))
+			await interaction.followup.send(msg)		
+		error, res = database.set_steam_id(interaction.user.id,f'{steam_id}')
+		color = textcolor.Red if error else textcolor.Cyan
+		msg = await textblock.get_ansi_block(await textblock.colorize(color,res))
+		await interaction.followup.send(f'{res}')
 
 	@app_commands.command(name="steam_id_from_comunity_url", description="Сохранить STEAM_ID в базу для mix сервера по ссылку на профиль STEAM")
 	@app_commands.check(check_channel)
 	async def steam_id_from_comunity_url(self, interaction: discord.Interaction, url: str): 
 		await interaction.response.defer()
 		steam_id = await steam_id_finder.get_steam_id_from_url(url)
-		await interaction.followup.send(f'```STEAM_ID: {steam_id}\nкоманда работает в тестовом режиме, и ничего не делает```')
-		# res = database.set_steam_id(interaction.user.id,steam_id)
-		# await interaction.followup.send(f'```{res}```')
+		error, res = database.set_steam_id(interaction.user.id,f'{steam_id}')
+		color = textcolor.Red if error else textcolor.Cyan
+		msg = await textblock.get_ansi_block(await textblock.colorize(color,res))
+		await interaction.followup.send(f'{res}')
 
 	@app_commands.command(name="rank", description="Ваша статистика по сохраненному нику командой /nick_cs")
 	@app_commands.check(check_channel)
@@ -244,15 +268,29 @@ class Cs_Cog(commands.Cog):
 		startCmdTime = datetime.datetime.now()
 		try:
 			id = interaction.user.id
-			cs_nick = database._get_player(id)
-			player = await hlstatx.get_player(cs_nick)
+			cs_nick, steam_id = database._get_player(id)
+			player = await hlstatx.get_player_by_steam_id(steam_id)
+			player_finded_by_steam_id = True
+			if(player is None):			
+				player = await hlstatx.get_player_by_nick(cs_nick)
+				player_finded_by_steam_id = False
 			c_time = await self.command_time(startCmdTime)
 			if(player is None):
-				await interaction.followup.send(f'```Ваша статистика не найдена.\nПроверьте, правильно ли вы указали боту свой ник командой nick_cs\nИли, возможно, вы еще не играли.```' )
+				err_msg = await textblock.get_ansi_block(await textblock.colorize(textcolor.Red,"Ваша статистика не найдена.\nПроверьте, правильно ли вы указали боту свой ник командой nick_cs\nИли, возможно, вы еще не играли."))
+				await interaction.followup.send(err_msg )
 				await self.lem_log(startCmdTime, interaction.user.name ,'/rank', c_time, interaction.guild.name)
 			else:
-				text_table = await hlxPlayer_to_TextTable.get_text_table(player)
-				await interaction.followup.send(f'```{text_table}```\n from:  {config.HLX_STATS_URL}' )
+				if player_finded_by_steam_id:
+					text_table = await hlxPlayer_to_TextTable.get_text_players_from_list(player)
+					player_id = player[0].player_id
+				else:
+					text_table = await hlxPlayer_to_TextTable.get_text_player_table(player)
+					player_id = player.player_id
+				pseudonims = await hlstatx.get_pseudonym_player_stats(player_id)
+				pseudonims_texttable = await hlxPlayer_to_TextTable.get_text_pseudonyms_players_from_list(pseudonims,["l", "c", "r", "r", "r", "r", "r"],["i", "t", "i", "i", "i", "i", "t"],[['Место','Ник','Фраги','Смерти','В голову','k/d','Точность']])
+				main_stat = await textblock.get_ansi_block(await textblock.colorize(textcolor.Blue,text_table))
+				pseudonym_block = await textblock.get_ansi_block(await textblock.colorize(textcolor.Green,pseudonims_texttable))
+				await interaction.followup.send(f'{main_stat}\nПсевдонимы на сервере: {pseudonym_block}\n from:  {config.HLX_STATS_BASE_URL}?mode=playerinfo&player={player_id}' )
 				await self.lem_log(startCmdTime, interaction.user.name ,'/rank', c_time, interaction.guild.name)
 		except Exception as e:
 			await self.lem_log_stack_trace(startCmdTime, interaction.user.name ,'/rank', 0, interaction.guild.name, traceback.format_exc())

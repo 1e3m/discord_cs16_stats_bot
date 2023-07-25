@@ -19,11 +19,15 @@ async def get_players_table(players) -> str:
     pp = [['Ник','Фраги','Время в игре']]
     table.set_cols_width([25, 5, 15]) 
     for player in players:
-        hour = int(player.duration / 3600)
-        minutes = int((player.duration -hour*3600) / 60)
+        hour = int(player.duration/ 3600)
+        minutes = int((player.duration  -hour*3600) / 60)
         seconds = int(player.duration - hour*3600 - minutes*60)
-        player_time = time(hour,minutes,seconds)
-        pp.append([player.name, player.score, player_time.strftime("%H:%M:%S")])
+        if(hour < 24):
+            player_time = time(hour,minutes,seconds)
+            timestr = player_time.strftime("%H:%M:%S")
+        else:
+            timestr = "Больше суток"
+        pp.append([player.name, player.score, timestr])
     table.add_rows(pp)        
     return table.draw()
 

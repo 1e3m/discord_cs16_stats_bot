@@ -104,13 +104,13 @@ def _check_and_create_table(table):
         res = _executeNonQuery(f''' CREATE TABLE {table}(player text NOT NULL pRIMARY KEY, nick text NULL, steam_id text NULL) ''', False)
     return res
 
-def set_player(player_name, nick):
+def set_player(player_name: int, nick: str) -> tuple(bool,str):
     """set player's nick to table 'players' (discord_user_id, nick)"""
 
     res = _check_and_create_table(tPlayers) #if table has not created -> create table
 
     if(_get_other_player_used_nick(nick, player_name) is not None): # if nick is used other user -> text error
-        return "ОШИБКА! Введенный ник используется другим игроком!"
+        return True, "ОШИБКА! Введенный ник используется другим игроком!"
 
     if(_get_player(player_name) is not None): # if player already exist -> update, else -> insert
         if(_executeNonQuery(f''' UPDATE '{tPlayers}' set nick = ? where player = ?  ''', True, nick, player_name) == True):
@@ -118,35 +118,35 @@ def set_player(player_name, nick):
     else:
         if(_executeNonQuery(f''' INSERT INTO {tPlayers}(player, nick) VALUES(?, ?) ''', True, player_name, nick) == True):
             res = f'Ваш ник успешно сохранен'
-    return res
+    return False, res
 
-def set_steam_id(player_name, steam_id):
+def set_steam_id(player_name: int, steam_id: str) -> tuple(bool,str):
     """set steam id to table 'pLayers' (discord_user_id, steam_id)"""
 
     res = _check_and_create_table(tPlayers) #if table has not created -> create table
     if(_get_other_player_used_steam_id(steam_id, player_name) is not None): # if STEAM_ID is used other user -> text error
-        return "ОШИБКА! Введенный STEAM_ID используется другим игроком!"
+        return True, "ОШИБКА! Введенный STEAM_ID используется другим игроком!"
 
-    if(_get_player(player_name) == True):  #if player already exist -> update, else -> insert
+    if(_get_player(player_name) is not None):  #if player already exist -> update, else -> insert
         if(_executeNonQuery(f''' UPDATE '{tPlayers}' set steam_id = ? where player = ?  ''', True, steam_id, player_name) == True):
            res = f'Ваш STEAM_ID успешно обновлен.'
     else:
         if(_executeNonQuery(f''' INSERT INTO {tPlayers}(player, steam_id) VALUES(?, ?) ''', True, player_name, steam_id) == True):
             res = f'Ваш STEAM_ID успешно сохранен'
-    return res
+    return False, res
 
 def _get_player(player_name):
     """get player nick from db"""
     if(_check_table(tPlayers)):
-        res = _execute(f''' SELECT nick FROM 'players' WHERE player = '{player_name}' ''')
+        res = _execute(f''' SELECT nick, steam_id FROM 'players' WHERE player = '{player_name}' ''')
         if res is None:
             return res
-        return res[0]
+        return res[0], res[1]
     else:
         return None
     
 def _get_other_player_used_nick(nick, player_name):
-    """get other player user nick """
+    """get other player used nick """
     if(_check_table(tPlayers)):
         res = _execute(f''' SELECT player FROM 'players' WHERE nick = ? and player <> ? ''', True, nick, player_name)
         if res is None:
@@ -156,7 +156,7 @@ def _get_other_player_used_nick(nick, player_name):
         return None
     
 def _get_other_player_used_steam_id(steam_id, player_name):
-    """get other player user steam_id """
+    """get other player used steam_id """
     if(_check_table(tPlayers)):
         res = _execute(f''' SELECT player FROM 'players' WHERE steam_id = ? and player <> ? ''', True, steam_id, player_name)
         if res is None:
