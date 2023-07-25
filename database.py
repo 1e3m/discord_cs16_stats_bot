@@ -104,7 +104,7 @@ def _check_and_create_table(table):
         res = _executeNonQuery(f''' CREATE TABLE {table}(player text NOT NULL pRIMARY KEY, nick text NULL, steam_id text NULL) ''', False)
     return res
 
-def set_player(player_name: int, nick: str) -> tuple(bool,str):
+def set_player(player_name: int, nick: str) -> tuple([bool,str]):
     """set player's nick to table 'players' (discord_user_id, nick)"""
 
     res = _check_and_create_table(tPlayers) #if table has not created -> create table
@@ -120,7 +120,7 @@ def set_player(player_name: int, nick: str) -> tuple(bool,str):
             res = f'Ваш ник успешно сохранен'
     return False, res
 
-def set_steam_id(player_name: int, steam_id: str) -> tuple(bool,str):
+def set_steam_id(player_name: int, steam_id: str) -> tuple[bool,str]:
     """set steam id to table 'pLayers' (discord_user_id, steam_id)"""
 
     res = _check_and_create_table(tPlayers) #if table has not created -> create table
